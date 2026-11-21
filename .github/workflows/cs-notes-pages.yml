@@ -1,0 +1,53 @@
+name: CS-Notes fork Pages
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cs-notes-pages-${{ github.event_name == 'pull_request' && github.ref || 'publish' }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.repository == 'yuxiaoli/CS-Notes'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Pandoc
+        run: sudo apt-get install --no-install-recommends -y pandoc
+      - name: Verify and build
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_build_cs_notes.py'
+          bash scripts/build-cs-notes.sh
+          test -f cs-notes-pages-dist/index.html
+      - uses: actions/configure-pages@v5
+        if: github.ref == 'refs/heads/develop' && github.event_name != 'pull_request'
+      - uses: actions/upload-pages-artifact@v4
+        if: github.ref == 'refs/heads/develop' && github.event_name != 'pull_request'
+        with:
+          path: cs-notes-pages-dist
+  deploy:
+    needs: build
+    if: github.repository == 'yuxiaoli/CS-Notes' && github.ref == 'refs/heads/develop' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

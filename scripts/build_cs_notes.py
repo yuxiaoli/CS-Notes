@@ -223,9 +223,9 @@ def article_html(html: str, src: str, dest: str, routes: dict[str, str], root: P
 
 def shell(title: str, dest: str, base: str, revision: str, content: str) -> str:
     root = relative_link(dest, "index.html")
-    css = relative_link(dest, "assets/style.css")
-    mark = relative_link(dest, "assets/computer-mark.svg")
-    script = relative_link(dest, "assets/search.js")
+    css = relative_link(dest, "assets/style.css") + "?v=" + revision[:12]
+    mark = relative_link(dest, "assets/computer-mark.svg") + "?v=" + revision[:12]
+    script = relative_link(dest, "assets/search.js") + "?v=" + revision[:12]
     canonical = f"https://yuxiaoli.github.io{base}{dest}".removesuffix("index.html")
     html_title = title if title == SITE_TITLE else f"{title} | {SITE_TITLE}"
     return f"""<!doctype html>

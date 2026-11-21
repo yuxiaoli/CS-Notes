@@ -1,4 +1,20 @@
 (() => {
+  const theme = document.querySelector(".theme-toggle");
+  if (theme) {
+    const root = document.documentElement;
+    const system = window.matchMedia("(prefers-color-scheme: dark)");
+    const effectiveDark = () => (root.dataset.theme || (system.matches ? "dark" : "light")) === "dark";
+    const sync = () => theme.setAttribute("aria-pressed", String(effectiveDark()));
+    sync();
+    theme.hidden = false;
+    system.addEventListener("change", sync);
+    theme.addEventListener("click", () => {
+      const selected = effectiveDark() ? "light" : "dark";
+      root.dataset.theme = selected;
+      try { localStorage.setItem("cs-notes-theme", selected); } catch {}
+      sync();
+    });
+  }
   const search = document.querySelector("#search");
   if (!search) return;
   search.closest(".search").hidden = false;

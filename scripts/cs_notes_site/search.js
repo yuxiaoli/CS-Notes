@@ -10,7 +10,7 @@
     let matches = 0;
     for (const topic of topics) {
       let visible = 0;
-      const label = normalize(topic.querySelector("h2").textContent);
+      const label = normalize(topic.querySelector("h3").textContent);
       for (const item of topic.querySelectorAll("[data-title]")) {
         const needle = label + " " + item.dataset.title;
         const match = words.every(word => needle.includes(word));

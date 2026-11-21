@@ -16,6 +16,7 @@ import subprocess
 import unicodedata
 from urllib.parse import quote, unquote, urlsplit
 
+SITE_TITLE = "计算机学习笔记"
 FORK = "https://github.com/yuxiaoli/CS-Notes"
 UPSTREAM = "https://github.com/CyC2018/CS-Notes"
 CREDIT = '<span>Adapted by <a href="https://s.vectorindex.cloud/sean">Sean</a> with ❤️</span>'
@@ -225,43 +226,62 @@ def shell(title: str, dest: str, base: str, revision: str, content: str) -> str:
     css = relative_link(dest, "assets/style.css")
     script = relative_link(dest, "assets/search.js")
     canonical = f"https://yuxiaoli.github.io{base}{dest}".removesuffix("index.html")
+    html_title = title if title == SITE_TITLE else f"{title} | {SITE_TITLE}"
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{em(title)} | CS-Notes</title><link rel="canonical" href="{em(canonical)}">
-<meta name="description" content="按主题阅读 CS-Notes 计算机基础与面试笔记。"><link rel="stylesheet" href="{em(css)}">
+<title>{em(html_title)}</title><link rel="canonical" href="{em(canonical)}">
+<meta name="description" content="按主题阅读计算机基础、编程和系统学习笔记。"><link rel="stylesheet" href="{em(css)}">
 <script defer src="{em(script)}"></script></head><body>
-<a class="skip" href="#main">跳到正文</a><header class="top"><a class="brand" href="{em(root)}">CS<span>·</span>Notes</a>
-<nav aria-label="主导航"><a href="{em(root)}#topics">主题</a><a href="{FORK}">此仓库 ↗</a></nav></header>
+<a class="skip" href="#main">跳到正文</a><header class="top"><div class="top-inner"><a class="brand" href="{em(root)}"><svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1zm0 0v15"/></svg>{SITE_TITLE}</a>
+<nav aria-label="主导航"><a href="{em(root)}#topics">浏览主题</a><a href="{FORK}">GitHub 仓库 <span aria-hidden="true">↗</span></a></nav></div></header>
 <main id="main">{content}</main>
 <footer><div><p>{CREDIT}</p><p>内容来源：<a href="{UPSTREAM}">CyC2018 和贡献者</a> · <a href="{UPSTREAM}#license">原项目许可</a></p></div><code title="构建来源提交">{em(revision[:12])}</code></footer></body></html>"""
 
 
-def home(pages: dict[str, Path], routes: dict[str, str]) -> str:
-    buckets = {label: [] for label, _ in TOPICS.values()} | {"更多笔记": []}
+def topic_id(label: str) -> str:
+    return f"topic-{name_hash(label)}"
+
+
+def topic_nav(labels: list[str], home_url: str, current: str = "") -> str:
+    links = []
+    for label in labels:
+        state = ' class="selected"' if label == current else ""
+        links.append(f'<li><a{state} href="{home_url}#{topic_id(label)}">{em(label)}</a></li>')
+    return '<nav class="topic-nav" aria-label="按主题浏览"><p>主题</p><ul>' + "".join(links) + '</ul></nav>'
+
+
+def home(pages: dict[str, Path], routes: dict[str, str], labels: list[str]) -> str:
+    buckets: dict[str, list[str]] = {label: [] for label in labels}
     for src in pages:
         label, title = category(src), Path(src).stem
         buckets[label].append(
             f'<li data-title="{em(normalized(title))}"><a href="{routes[src]}">{em(title)}</a></li>')
     sections = ''.join(
-        f'<section class="topic" data-topic><h2>{em(label)}</h2><ul>{"".join(items)}</ul></section>'
-        for label, items in buckets.items() if items)
-    return f"""<section class="hero"><p class="kicker">计算机科学 · 学习与面试</p><h1>CS-Notes</h1>
-<p>按学习路线或主题阅读计算机基础与技术面试笔记。</p></section>
-<section id="topics" aria-labelledby="topics-title"><div class="index-head"><div><h2 id="topics-title">浏览主题</h2>
-<p>{len(pages)} 篇笔记 · 保留原文与出处</p></div><div class="search" hidden><label for="search">搜索笔记</label>
-<input id="search" type="search" placeholder="例如：数据库、Java、网络" autocomplete="off" aria-controls="topic-grid"></div></div>
-<p id="search-status" role="status" aria-live="polite"></p><div class="grid" id="topic-grid">{sections}</div></section>"""
+        f'<section class="topic" id="{topic_id(label)}" data-topic><h3>{em(label)}</h3><ul>{"".join(items)}</ul></section>'
+        for label, items in buckets.items())
+    return f"""<div class="home-layout">{topic_nav(labels, '')}<div class="home-main"><header class="home-intro">
+<h1>{SITE_TITLE}</h1><p>查阅算法、计算机系统、网络、数据库和编程语言笔记。</p>
+<div class="search" hidden><label for="search">搜索笔记</label><div class="search-field"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="6.75" cy="6.75" r="4.5"/><path d="m10 10 3.7 3.7"/></svg>
+<input id="search" type="search" placeholder="例如：数据库、Java、网络" autocomplete="off" aria-controls="topic-grid"></div></div></header>
+<section id="topics" aria-labelledby="topics-title"><h2 id="topics-title">浏览主题</h2>
+<p id="search-status" role="status" aria-live="polite"></p><div class="grid" id="topic-grid">{sections}</div></section></div></div>"""
 
 
-def note_page(src: str, body: str, dest: str) -> str:
-    title = Path(src).stem
+def note_page(src: str, body: str, dest: str, labels: list[str]) -> str:
+    title, label = Path(src).stem, category(src)
+    root = relative_link(dest, "index.html")
     groups = [(level, anchor, unescape(TAGS.sub("", caption)))
               for level, anchor, caption in HEADINGS.findall(body) if int(level) <= 4]
-    toc_items = "".join(f'<li><a href="#{em(anchor)}">{em(label)}</a></li>' for _, anchor, label in groups)
-    toc = f'<aside class="outline"><details open><summary>本页目录</summary><ul>{toc_items}</ul></details></aside>' if toc_items else ""
-    return f"""<nav class="crumb" aria-label="页面路径"><a href="{relative_link(dest,'index.html')}">主题</a> / {em(category(src))}</nav>
-<div class="reading"><article><h1>{em(title)}</h1><p class="source">原文：<a href="{article_source(src)}">CyC2018/CS-Notes ↗</a> ·
-<a href="{UPSTREAM}#license">署名及相同方式共享</a></p><div class="prose">{body}</div></article>{toc}</div>"""
+    toc_items = "".join(f'<li class="level-{level}"><a href="#{em(anchor)}">{em(caption)}</a></li>'
+                        for level, anchor, caption in groups)
+    toc = f'<div class="outline"><details open><summary>本页目录</summary><nav aria-label="本页目录"><ul>{toc_items}</ul></nav></details></div>' if toc_items else ""
+    layout = "reading with-outline" if toc else "reading"
+    return f"""<div class="note-layout">{topic_nav(labels, root, label)}<div class="note-main">
+<nav class="crumb" aria-label="页面路径"><ol><li><a href="{root}">首页</a></li><li><a href="{root}#{topic_id(label)}">{em(label)}</a></li><li aria-current="page">{em(title)}</li></ol></nav>
+<div class="{layout}"><div class="article-heading"><h1 id="article-title">{em(title)}</h1></div>{toc}
+<article aria-labelledby="article-title"><div class="prose">{body}</div>
+<p class="source">原文：<a href="{article_source(src)}">CyC2018/CS-Notes ↗</a> ·
+<a href="{UPSTREAM}#license">署名及相同方式共享</a></p></article></div></div></div>"""
 
 
 class PageIDs(HTMLParser):
@@ -327,6 +347,8 @@ def build(root: Path, out: Path, base: str) -> int:
     pages = discover(root)
     routes = {src: f"notes/{name_hash(src)}.html" for src in pages}
     assets = asset_index(root)
+    present = {category(src) for src in pages}
+    labels = [label for label in [*(label for label, _ in TOPICS.values()), "更多笔记"] if label in present]
     rev = revision_for(root)
     out.mkdir(parents=True)
     (out / "notes").mkdir()
@@ -339,8 +361,8 @@ def build(root: Path, out: Path, base: str) -> int:
         for src, body in zip(pages, results):
             dest = routes[src]
             body = article_html(body, src, dest, routes, root, out, assets)
-            (out / dest).write_text(shell(Path(src).stem, dest, base, rev, note_page(src, body, dest)), encoding="utf-8")
-    (out / "index.html").write_text(shell("学习笔记", "index.html", base, rev, home(pages, routes)), encoding="utf-8")
+            (out / dest).write_text(shell(Path(src).stem, dest, base, rev, note_page(src, body, dest, labels)), encoding="utf-8")
+    (out / "index.html").write_text(shell(SITE_TITLE, "index.html", base, rev, home(pages, routes, labels)), encoding="utf-8")
     (out / "404.html").write_text(shell("未找到笔记", "404.html", base, rev,
                                         '<h1>未找到笔记</h1><p><a href="index.html">浏览所有主题</a></p>'), encoding="utf-8")
     (out / "sitemap.xml").write_text(

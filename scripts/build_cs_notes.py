@@ -36,7 +36,7 @@ HEADINGS = re.compile(r'<h([1-6]) id="([^"]+)">(.*?)</h\1>', re.S)
 TAGS = re.compile(r'<[^>]+>')
 VALID_BASE = re.compile(r"/(?:[A-Za-z0-9._~/-]+/)?")
 SAFE_OUTPUT = "cs-notes-pages-dist"
-STYLES = ("style.css", "search.js", "computer-mark.svg")
+STYLES = ("style.css", "search.js", "computer-mark.png")
 
 
 def em(value: str) -> str:
@@ -224,7 +224,7 @@ def article_html(html: str, src: str, dest: str, routes: dict[str, str], root: P
 def shell(title: str, dest: str, base: str, revision: str, content: str) -> str:
     root = relative_link(dest, "index.html")
     css = relative_link(dest, "assets/style.css") + "?v=" + revision[:12]
-    mark = relative_link(dest, "assets/computer-mark.svg") + "?v=" + revision[:12]
+    mark = relative_link(dest, "assets/computer-mark.png") + "?v=" + revision[:12]
     script = relative_link(dest, "assets/search.js") + "?v=" + revision[:12]
     canonical = f"https://yuxiaoli.github.io{base}{dest}".removesuffix("index.html")
     html_title = title if title == SITE_TITLE else f"{title} | {SITE_TITLE}"
@@ -232,7 +232,7 @@ def shell(title: str, dest: str, base: str, revision: str, content: str) -> str:
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{{const theme=localStorage.getItem("cs-notes-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme}}catch{{}}</script>
 <title>{em(html_title)}</title><link rel="canonical" href="{em(canonical)}">
-<meta name="description" content="按主题阅读计算机基础、编程和系统学习笔记。"><link rel="stylesheet" href="{em(css)}"><link rel="icon" href="{em(mark)}" type="image/svg+xml">
+<meta name="description" content="按主题阅读计算机基础、编程和系统学习笔记。"><link rel="stylesheet" href="{em(css)}"><link rel="icon" href="{em(mark)}" type="image/png">
 <script defer src="{em(script)}"></script></head><body>
 <a class="skip" href="#main">跳到正文</a><header class="top"><div class="top-inner"><a class="brand" href="{em(root)}"><img class="brand-mark" src="{em(mark)}" width="32" height="32" alt="">{SITE_TITLE}</a>
 <nav aria-label="主导航"><a href="{em(root)}#topics">浏览主题</a><a href="{FORK}">GitHub 仓库 <span aria-hidden="true">↗</span></a><button type="button" class="theme-toggle" aria-pressed="false" title="深色模式" hidden><svg class="theme-light" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2.8"/><path d="M8 1v2m0 10v2M1 8h2m10 0h2M3 3l1.5 1.5m7 7L13 13M3 13l1.5-1.5m7-7L13 3"/></svg><svg class="theme-dark" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M13.8 10A6 6 0 0 1 6 2.2a6 6 0 1 0 7.8 7.8Z"/></svg><span>深色模式</span></button></nav></div></header>

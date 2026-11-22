@@ -39,11 +39,14 @@ class BuildTest(unittest.TestCase):
             self.assertEqual(build(root, out, "/CS-Notes/"), 2)
             self.assertEqual(before, {p: p.read_bytes() for p in before})
             self.assertEqual(len(list((out / "media").glob("*.png"))), 1)
+            self.assertEqual((out / "assets/computer-mark.png").read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
             self.assertEqual(len(ElementTree.parse(out / "sitemap.xml").getroot()), 3)
             for path in out.rglob("*.html"):
                 content = path.read_text(encoding="utf-8")
                 self.assertIn('Adapted by <a href="https://s.vectorindex.cloud/sean">Sean</a> with ❤️', content)
                 self.assertIn('href="https://github.com/yuxiaoli/CS-Notes"', content)
+                self.assertRegex(content, r'<link rel="icon" href="[^"]*assets/computer-mark\.png\?v=[^"]+" type="image/png">')
+                self.assertRegex(content, r'<img class="brand-mark" src="[^"]*assets/computer-mark\.png\?v=[^"]+"')
                 self.assertNotIn("NOT_PUBLISHED", content)
                 self.assertNotIn('<script>alert', content)
                 if path.parent.name == "notes":
